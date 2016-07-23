@@ -205,9 +205,62 @@ function AgendaPanel:do_update()
 end
 
 
+QuotesPanel = Panel:new()
+
+function QuotesPanel:draw(cr)
+    self:draw_background(cr)
+
+    cairo_select_font_face (cr, font, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_REGULAR)
+    cairo_set_font_size (cr, font_size)
+    cairo_set_source_rgba (cr, font_r, font_g, font_b, font_a)
+
+    local text_y = self.y0 + panel_title_height + line_spacing
+    
+    for i=1, #self.data do
+        cairo_move_to(cr, self.x0 + text_margin, text_y + (font_size + line_spacing) * i)
+        cairo_show_text(cr, self.data[i]) 
+    end
+end
+
+function QuotesPanel:do_update()
+    self.data = {}
+
+    lines = {}
+    for line in io.lines(self.file) do 
+        lines[#lines + 1] = line
+    end
+
+    math.randomseed(os.time())
+    i = math.random(#lines)
+
+    local max_lines = (self.h - panel_title_height) / (font_size + line_spacing) - 2
+    local line_max_length = (self.w + text_margin * 2) / (font_size - 8)
+
+    local line = lines[i]
+
+    if line ~= nil and line ~= '' then
+        if line:len() > line_max_length then
+            tmp = ""
+            for token in line:gmatch("[^%s]+") do
+                if tmp:len() + token:len() <= line_max_length then
+                    tmp = tmp .. " " .. token
+                else
+                    self.data[#self.data+1] = tmp
+                    tmp = token
+                end
+            end
+            self.data[#self.data+1] = tmp
+        else
+            self.data[1] = line 
+        end
+    end
+end
+
+
 panels = {
     SystemPanel:new{x0=10, y0=10, w=400, h=400, title="System"},
-    AgendaPanel:new{x0=10, y0=500, w=600, h=400, title="Agenda", last_update = 0, update_interval = 60*15, agenda_data = {}}       
+    AgendaPanel:new{x0=10, y0=500, w=600, h=400, title="Agenda", last_update = 0, update_interval = 60*15, agenda_data = {}},
+    QuotesPanel:new{x0=10, y0=1000, w=600, h=400, title="Quotes", last_update = 0, update_interval = 60, data = {}, file="/home/igor/Dropbox/ideas/quotes.txt"}
 }
 
 function conky_main()
