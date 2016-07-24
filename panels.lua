@@ -325,7 +325,7 @@ end
 panels = {
     SystemPanel:new{x0=10, y0=10, w=400, h=400, title="System"},
     AgendaPanel:new{x0=10, y0=500, w=600, h=400, title="Agenda", last_update = 0, update_interval = 60*15, agenda_data = {}},
-    QuotesPanel:new{x0=10, y0=1000, w=600, h=300, title="Quotes and Ideas", last_update = 0, update_interval = 60, data = {}, file="/home/igor/Dropbox/ideas/quotes.txt"},
+    QuotesPanel:new{x0=1945, y0=625, w=600, h=300, title="Quotes and Ideas", last_update = 0, update_interval = 60, data = {}, file="/home/igor/Dropbox/ideas/quotes.txt"},
     WebcamPanel:new{x0=1945, y0=10, w=600, h=600, title="Webcam", last_update = 0, update_interval = 60*3, image=nil}
 }
 
