@@ -1,4 +1,5 @@
 require 'cairo'
+require 'imlib2'
 
 panel_r = 45 / 255
 panel_g = 45 / 255
@@ -257,10 +258,75 @@ function QuotesPanel:do_update()
 end
 
 
+WebcamPanel = Panel:new()
+
+function WebcamPanel:draw(cr)
+    self:draw_background(cr)
+
+    if self.image ~= nil then 
+        imlib_context_set_image(self.image)
+        imlib_render_image_on_drawable(self.x0 + text_margin, self.y0 + panel_title_height + (self.h - panel_title_height - self.image_height - text_margin * 2) / 2)
+    end
+
+    cairo_select_font_face (cr, font, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_REGULAR)
+    cairo_set_font_size (cr, font_size)
+    cairo_set_source_rgba (cr, font_r, font_g, font_b, font_a)
+
+    cairo_move_to(cr, self.x0 + text_margin, self.y0 + self.h - text_margin)
+    cairo_show_text(cr, self.webcam_location) 
+end
+
+function WebcamPanel:do_update()
+-- legacy code
+    local f = io.popen("python3 /home/igor/programming/home-projects/conky/webcam.py")
+
+    out =  f:read("*a")
+    f:close()
+
+    self.webcam_location = string.sub(out, 0, -2)
+
+    if self.image ~= nil then
+        imlib_context_set_image(self.image)
+        imlib_free_image()
+    end
+
+    if webcam_buffer ~= nil then
+        imlib_context_set_image(self.image)
+        imlib_free_image()
+    end
+
+    webcam_buffer = imlib_load_image("/tmp/webcam.jpg")
+
+    if webcam_buffer == nil then return end
+
+    imlib_context_set_image(webcam_buffer)
+
+    w_img, h_img = imlib_image_get_width(), imlib_image_get_height()
+
+    webcam_max_height = self.h - panel_title_height * 2 - text_margin * 2 
+    webcam_max_width = self.w - text_margin * 2
+
+    aspect = w_img / h_img
+
+    self.image_width = webcam_max_width
+    self.image_height = self.image_width / aspect
+
+    self.image = imlib_create_image(self.image_width, self.image_height)
+    imlib_context_set_image(self.image)
+
+    imlib_blend_image_onto_image(webcam_buffer, 0, 0, 0, w_img, h_img, 0, 0, self.image_width, self.image_height)
+
+    imlib_context_set_image(webcam_buffer)
+    imlib_free_image()
+    webcam_buffer = nil
+end
+
+
 panels = {
     SystemPanel:new{x0=10, y0=10, w=400, h=400, title="System"},
     AgendaPanel:new{x0=10, y0=500, w=600, h=400, title="Agenda", last_update = 0, update_interval = 60*15, agenda_data = {}},
-    QuotesPanel:new{x0=10, y0=1000, w=600, h=300, title="Quotes and Ideas", last_update = 0, update_interval = 60, data = {}, file="/home/igor/Dropbox/ideas/quotes.txt"}
+    QuotesPanel:new{x0=10, y0=1000, w=600, h=300, title="Quotes and Ideas", last_update = 0, update_interval = 60, data = {}, file="/home/igor/Dropbox/ideas/quotes.txt"},
+    WebcamPanel:new{x0=1945, y0=10, w=600, h=600, title="Webcam", last_update = 0, update_interval = 60*3, image=nil}
 }
 
 function conky_main()
